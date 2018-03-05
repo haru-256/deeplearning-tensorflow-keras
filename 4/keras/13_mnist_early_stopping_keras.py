@@ -45,6 +45,8 @@ def weight_variable(shape, name=None):
     return np.sqrt(2.0 / shape[0]) * np.random.normal(size=shape)
 
 
+# Keras ではEarlyStoppingを行うクラスは用意されており，
+# 事前にインスタンスを静止絵しておく．
 early_stopping = EarlyStopping(monitor='val_loss', patience=10, verbose=1)
 
 model = Sequential()
@@ -80,7 +82,8 @@ val_loss = hist.history['val_loss']
 
 plt.rc('font', family='serif')
 fig = plt.figure()
-plt.plot(range(len(val_loss)), val_loss, label='loss', color='black')
+plt.plot(range(len(val_loss)), val_loss, label='loss',
+         color='black', marker='o')
 plt.xlabel('epochs')
 plt.show()
 

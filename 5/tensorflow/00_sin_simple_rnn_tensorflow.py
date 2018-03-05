@@ -17,16 +17,21 @@ def inference(x, n_batch, maxlen=None, n_hidden=None, n_out=None):
         initial = tf.zeros(shape, dtype=tf.float32)
         return tf.Variable(initial)
 
-    cell = tf.contrib.rnn.BasicRNNCell(n_hidden)
-    initial_state = cell.zero_state(n_batch, tf.float32)
+    # cell = tf.contrib.rnn.BasicRNNCell(n_hidden)
+
+    # tf.contrib.rnn is aliases of tf.nn.rnn_cell
+    cell = tf.nn.rnn_cell.BasicRNNCell(n_hidden)
+    # To set initial state to zeros
+    initial_state = cell.zero_state(n_batch, tf.float32)  # return zero-filled state tensors.
 
     state = initial_state
     outputs = []  # 過去の隠れ層の出力を保存
     with tf.variable_scope('RNN'):
         for t in range(maxlen):
             if t > 0:
-                tf.get_variable_scope().reuse_variables()
-            (cell_output, state) = cell(x[:, t, :], state)
+                tf.get_variable_scope().reuse_variables()  # reuse variables
+            (cell_output, state) \
+                = cell(x[:, t, :], state)  # Run this RNN cell on inputs, starting from the given state
             outputs.append(cell_output)
 
     output = outputs[-1]
@@ -35,11 +40,12 @@ def inference(x, n_batch, maxlen=None, n_hidden=None, n_out=None):
     c = bias_variable([n_out])
     y = tf.matmul(output, V) + c  # 線形活性
 
-    return y
+    return y  # Loss Function is composed only of last output
 
 
 def loss(y, t):
-    mse = tf.reduce_mean(tf.square(y - t))
+    # mse = tf.reduce_mean(tf.square(y - t))
+    mse = tf.losses.mean_squared_error(t, y)
     return mse
 
 
@@ -105,24 +111,24 @@ if __name__ == '__main__':
     N_validation = len(data) - N_train
 
     X_train, X_validation, Y_train, Y_validation = \
-        train_test_split(X, Y, test_size=N_validation)
+        train_test_split(X, Y, test_size=N_validation, train_size=N_train)
 
-    '''
+    """
     モデル設定
-    '''
-    n_in = len(X[0][0])  # 1
+    """
+    n_in = len(X[0][0])  # 1(scalar)
     n_hidden = 20
-    n_out = len(Y[0])  # 1
+    n_out = len(Y[0])  # 1(scalar)
 
     x = tf.placeholder(tf.float32, shape=[None, maxlen, n_in])
     t = tf.placeholder(tf.float32, shape=[None, n_out])
-    n_batch = tf.placeholder(tf.int32)
+    n_batch = tf.placeholder(tf.int32, shape=[])  # In the case of scalar, shape=[]
 
     y = inference(x, n_batch, maxlen=maxlen, n_hidden=n_hidden, n_out=n_out)
     loss = loss(y, t)
     train_step = training(loss)
 
-    early_stopping = EarlyStopping(patience=10, verbose=1)
+    early_stopping = EarlyStopping(patience=15, verbose=1)
     history = {
         'val_loss': []
     }
@@ -171,14 +177,14 @@ if __name__ == '__main__':
     出力を用いて予測
     '''
     truncate = maxlen
-    Z = X[:1]  # 元データの最初の一部だけ切り出し
+    Z = X[:1]  # 元データの最初の一部だけ切り出し, ndim=3とするためにX[0]ではなくX[:1]を使う
 
     original = [f[i] for i in range(maxlen)]
     predicted = [None for i in range(maxlen)]
 
     for i in range(length_of_sequences - maxlen + 1):
         # 最後の時系列データから未来を予測
-        z_ = Z[-1:]
+        z_ = Z[-1:]  # Z[-1]とするとndim=2となるので ValueError: Cannot feed value of shape (25, 1) for Tensor 'Placeholder:0', which has shape '(?, 25, 1)' が起こる
         y_ = y.eval(session=sess, feed_dict={
             x: Z[-1:],
             n_batch: 1

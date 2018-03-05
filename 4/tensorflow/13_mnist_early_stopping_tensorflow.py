@@ -62,6 +62,7 @@ def accuracy(y, t):
     return accuracy
 
 
+# Earlystoppingを行うクラス
 class EarlyStopping():
     def __init__(self, patience=0, verbose=0):
         self._step = 0
@@ -77,7 +78,7 @@ class EarlyStopping():
                     print('early stopping')
                 return True
         else:
-            self._step = 0
+            self._step = 0  # 連続して誤差が増加すると終了するため常に初期化
             self._loss = loss
 
         return False
@@ -174,7 +175,8 @@ if __name__ == '__main__':
 
         print('epoch:', epoch,
               ' validation loss:', val_loss,
-              ' validation accuracy:', val_acc)
+              ' validation accuracy:', val_acc,
+              ' step: ', early_stopping._step)
 
         # Early Stopping チェック
         if early_stopping.validate(val_loss):
@@ -186,7 +188,7 @@ if __name__ == '__main__':
     plt.rc('font', family='serif')
     fig = plt.figure()
     plt.plot(range(len(history['val_loss'])), history['val_loss'],
-             label='loss', color='black')
+             label='loss', color='black', marker='o')
     plt.xlabel('epochs')
     plt.show()
 

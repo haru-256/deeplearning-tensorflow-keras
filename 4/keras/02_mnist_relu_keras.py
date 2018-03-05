@@ -20,7 +20,9 @@ X = mnist.data[indices]
 y = mnist.target[indices]
 Y = np.eye(10)[y.astype(int)]  # 1-of-K 表現に変換
 
-X_train, X_test, Y_train, Y_test = train_test_split(X, Y, train_size=0.8)
+X_train, X_test, Y_train, Y_test = train_test_split(X, Y,
+                                                    train_size=0.8,
+                                                    test_size=0.2)
 
 '''
 モデル設定

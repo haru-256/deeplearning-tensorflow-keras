@@ -6,7 +6,7 @@ from keras.layers.recurrent import LSTM
 from keras.optimizers import Adam
 from keras.callbacks import EarlyStopping
 from sklearn.model_selection import train_test_split
-from sklearn.utils import shuffle
+# from sklearn.utils import shuffle
 
 np.random.seed(0)
 

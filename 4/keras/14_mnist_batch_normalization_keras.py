@@ -3,7 +3,7 @@ from keras.models import Sequential
 from keras.layers.core import Dense, Activation
 from keras.layers.normalization import BatchNormalization
 from keras.optimizers import Adam
-from keras.callbacks import EarlyStopping
+from keras.callbacks import EarlyStopping, TensorBoard
 from sklearn import datasets
 from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt
@@ -42,20 +42,26 @@ activation = 'relu'
 
 
 def weight_variable(shape, name=None):
+    # Heの初期値を使う
     return np.sqrt(2.0 / shape[0]) * np.random.normal(size=shape)
 
 
 early_stopping = EarlyStopping(monitor='val_loss', patience=10, verbose=1)
+tensorboard = TensorBoard(log_dir='/tmp/log', histogram_freq=1)
 
 model = Sequential()
 for i, input_dim in enumerate(([n_in] + n_hiddens)[:-1]):
-    model.add(Dense(n_hiddens[i], input_dim=input_dim,
-                    kernel_initializer=weight_variable))
-    model.add(BatchNormalization())
+    model.add(Dense(n_hiddens[i], input_shape=(input_dim,),
+                    kernel_initializer='he_normal'))
+    # kernel_initializer=weight_variableを使わなくても良い
+    # 他の初期化方法は https://keras.io/initializers/  参照
+    model.add(BatchNormalization())  # Denseの後にBatchnormalizationを追加するだけで良い
     model.add(Activation(activation))
 
 model.add(Dense(n_out, kernel_initializer=weight_variable))
 model.add(Activation('softmax'))
+
+model.summary()  # モデルの要約を出力する．
 
 model.compile(loss='categorical_crossentropy',
               optimizer=Adam(lr=0.01, beta_1=0.9, beta_2=0.999),
@@ -64,13 +70,13 @@ model.compile(loss='categorical_crossentropy',
 '''
 モデル学習
 '''
-epochs = 200
-batch_size = 200
-
+epochs = 20
+batch_size = 100
+print(X_train.dtype)
 hist = model.fit(X_train, Y_train, epochs=epochs,
                  batch_size=batch_size,
                  validation_data=(X_validation, Y_validation),
-                 callbacks=[early_stopping])
+                 callbacks=[early_stopping, tensorboard])
 
 '''
 学習の進み具合を可視化

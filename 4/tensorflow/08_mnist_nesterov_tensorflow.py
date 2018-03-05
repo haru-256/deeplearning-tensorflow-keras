@@ -49,6 +49,7 @@ def loss(y, t):
 
 
 def training(loss):
+    # use_nesterov=TrueとするだけでNestrovモメンタムが行える
     optimizer = tf.train.MomentumOptimizer(0.01, 0.9, use_nesterov=True)
     train_step = optimizer.minimize(loss)
     return train_step

@@ -49,6 +49,7 @@ def loss(y, t):
 
 
 def training(loss):
+    # tf.train.AdagradOptimizer(0.01) 第一引数は初期学習率
     optimizer = tf.train.AdagradOptimizer(0.01)
     train_step = optimizer.minimize(loss)
     return train_step

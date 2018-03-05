@@ -12,9 +12,11 @@ tf.set_random_seed(1234)
 '''
 N = 300  # 全データ数
 X, y = datasets.make_moons(N, noise=0.3)
-Y = y.reshape(N, 1)
+Y = y.reshape(N, 1)  # Tensorに合うようにデータの形状を変更
 
-X_train, X_test, Y_train, Y_test = train_test_split(X, Y, train_size=0.8)
+X_train, X_test, Y_train, Y_test = train_test_split(X, Y,
+                                                    train_size=0.8,
+                                                    test_size=0.2)
 
 
 '''
@@ -36,11 +38,20 @@ V = tf.Variable(tf.truncated_normal([num_hidden, 1]))
 c = tf.Variable(tf.zeros([1]))
 y = tf.nn.sigmoid(tf.matmul(h, V) + c)
 
+'''
+誤差関数の設定
+'''
 cross_entropy = - tf.reduce_sum(t * tf.log(y) + (1 - t) * tf.log(1 - y))
+"""
+最適化手法に勾配法を選択
+"""
 train_step = tf.train.GradientDescentOptimizer(0.05).minimize(cross_entropy)
 correct_prediction = tf.equal(tf.to_float(tf.greater(y, 0.5)), t)
 
-accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
+# tf..cast(correct_prediction, dtype=tf.float32)は
+# tf.to_float(correct_prediction)と同じ動き．
+# しかし，tf.to_float()はtf.float32にしか変換されない．
+accuracy = tf.reduce_mean(tf.cast(correct_prediction, dtype=tf.float32))
 
 '''
 モデル学習
@@ -63,6 +74,12 @@ for epoch in range(500):
             x: X_[start:end],
             t: Y_[start:end]
         })
+    print('epoch:{0:3d} accuracy: {1:.2f}'
+          .format(epoch, accuracy.eval(session=sess,
+                                       feed_dict={
+                                           x: X_train,
+                                           t: Y_train
+                                       })))
 
 '''
 予測精度の評価

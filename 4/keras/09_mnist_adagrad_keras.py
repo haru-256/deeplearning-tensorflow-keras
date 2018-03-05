@@ -54,6 +54,7 @@ for i, input_dim in enumerate(([n_in] + n_hiddens)[:-1]):
 model.add(Dense(n_out, kernel_initializer=weight_variable))
 model.add(Activation('softmax'))
 
+# optimizerにAdagradのインスタンスを渡せばAdagradを実行してくれる．
 model.compile(loss='categorical_crossentropy',
               optimizer=Adagrad(lr=0.01),
               metrics=['accuracy'])

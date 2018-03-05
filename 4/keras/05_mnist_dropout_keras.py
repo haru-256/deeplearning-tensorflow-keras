@@ -32,6 +32,7 @@ n_out = len(Y[0])  # 10
 model = Sequential()
 model.add(Dense(n_hidden, input_dim=n_in))
 model.add(Activation('tanh'))
+# KerasでのDrop outの引数は0にする確率を表すのに注意．
 model.add(Dropout(0.5))
 
 model.add(Dense(n_hidden))

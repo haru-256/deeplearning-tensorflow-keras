@@ -31,6 +31,8 @@ model = Sequential()
 model.add(Dense(input_dim=M, units=K))
 model.add(Activation('softmax'))
 
+# 2値分類の時はloss='bainary_crossentropy'だが，
+# 1-of-K表現の場合は'categorical_crossentropy'
 model.compile(loss='categorical_crossentropy', optimizer=SGD(lr=0.1))
 
 '''

@@ -6,7 +6,7 @@ from keras.layers.recurrent import SimpleRNN
 from keras.optimizers import Adam
 from keras.callbacks import EarlyStopping
 from sklearn.model_selection import train_test_split
-from sklearn.utils import shuffle
+# from sklearn.utils import shuffle
 
 np.random.seed(0)
 
@@ -64,7 +64,7 @@ early_stopping = EarlyStopping(monitor='val_loss', patience=10, verbose=1)
 model = Sequential()
 model.add(SimpleRNN(n_hidden,
                     kernel_initializer=weight_variable,
-                    input_shape=(maxlen, n_in)))
+                    input_shape=(maxlen, n_in)))  # Kerasに置いても入力shapeは(n_batch, n_T, n_dim)
 model.add(Dense(n_out, kernel_initializer=weight_variable))
 model.add(Activation('linear'))
 
@@ -72,12 +72,15 @@ optimizer = Adam(lr=0.001, beta_1=0.9, beta_2=0.999)
 model.compile(loss='mean_squared_error',
               optimizer=optimizer)
 
+print(model.summary())
+
 '''
 モデル学習
 '''
 epochs = 500
 batch_size = 10
 
+print("start learning")
 model.fit(X_train, Y_train,
           batch_size=batch_size,
           epochs=epochs,

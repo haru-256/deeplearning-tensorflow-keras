@@ -13,12 +13,16 @@ Y = np.array([[0], [1], [1], [0]])
 '''
 モデル設定
 '''
+# 入力データを設定
 x = tf.placeholder(tf.float32, shape=[None, 2])
 t = tf.placeholder(tf.float32, shape=[None, 1])
 
 # 入力層 - 隠れ層
-W = tf.Variable(tf.truncated_normal([2, 2]))
+# tf.truncated_normal()
+# Tensorを正規分布で標準偏差の２倍までの値まででランダムに初期化する
+W = tf.Variable(tf.truncated_normal(shape=[2, 2]))
 b = tf.Variable(tf.zeros([2]))
+# tf.nn.sigmoid() は要素ごとにシグモイド関数を適用する．
 h = tf.nn.sigmoid(tf.matmul(x, W) + b)
 
 # 隠れ層 - 出力層
@@ -42,8 +46,13 @@ for epoch in range(4000):
         x: X,
         t: Y
     })
-    if epoch % 1000 == 0:
-        print('epoch:', epoch)
+    if epoch % 100 == 0:
+        print('epoch: {0:3d} cross_entropy: {1:.4f}'
+              .format(epoch,
+                      cross_entropy.eval(session=sess, feed_dict={
+                          x: X,
+                          t: Y
+                      })))
 
 '''
 学習結果の確認

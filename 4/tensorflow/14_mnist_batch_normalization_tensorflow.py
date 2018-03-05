@@ -9,7 +9,7 @@ np.random.seed(0)
 tf.set_random_seed(1234)
 
 
-def inference(x, n_in, n_hiddens, n_out):
+def inference(x, n_in, n_hiddens, n_out, train_fg):
     def weight_variable(shape):
         initial = np.sqrt(2.0 / shape[0]) * tf.truncated_normal(shape)
         return tf.Variable(initial)
@@ -20,9 +20,11 @@ def inference(x, n_in, n_hiddens, n_out):
 
     def batch_normalization(shape, x):
         eps = 1e-8
-        beta = tf.Variable(tf.zeros(shape))
-        gamma = tf.Variable(tf.ones(shape))
-        mean, var = tf.nn.moments(x, [0])
+        beta = tf.Variable(tf.zeros(shape))  # betaとgammaは今の層のニューロン数
+        gamma = tf.Variable(tf.ones(shape))  # の縦ベクトルとなる．
+        # tf.nn.moments(x, axes=[0]) はaxes方向の平均と分散を求める．
+        # axes=[0] で行方向，axes=[0,1]で全体の平均と分散を求める．
+        mean, var = tf.nn.moments(x, axes=[0])
         return gamma * (x - mean) / tf.sqrt(var + eps) + beta
 
     # 入力層 - 隠れ層、隠れ層 - 隠れ層
@@ -32,11 +34,47 @@ def inference(x, n_in, n_hiddens, n_out):
             input_dim = n_in
         else:
             input = output
-            input_dim = n_hiddens[i-1]
+            input_dim = n_hiddens[i - 1]
 
-        W = weight_variable([input_dim, n_hidden])
+        # W = weight_variable([input_dim, n_hidden])
+
+        # tf.contrib.layers.variance_scaling_initializer によりHeの初期値を利用
+        # することができるTensorを作成 詳細はoDocument参照
+        he_init = tf.contrib.layers.variance_scaling_initializer(
+            factor=2,
+            mode='FAN_IN',
+            uniform=False,
+            seed=None,
+            dtype=tf.float32
+        )
+        """これでもOKだが tf.name_scopeと使わない方が良い
+        # W = tf.get_variable("W_{}".format(i), shape=[input_dim, n_hidden],
+                            initializer=he_init)
+        """
+
+        W = tf.Variable(he_init([input_dim, n_hidden]))
         u = tf.matmul(input, W)
-        h = batch_normalization([n_hidden], u)
+        # h = batch_normalization([n_hidden], u)
+        """
+        eps = 1e-8
+        beta = tf.Variable(tf.zeros([n_hidden]))  # betaとgammaは今の層のニューロン数の縦ベクトルとなる．
+        # gamma = tf.Variable(tf.ones([n_hidden]))  # gammma を適用すると発散してしまう．
+        # tf.nn.moments(x, axes=[0]) はaxes方向の平均と分散を求める．
+        # axes=[0] で行方向，axes=[0,1]で全体の平均と分散を求める．
+        mean, var = tf.nn.moments(u, axes=[0])
+        h = tf.nn.batch_normalization(u,
+                                      mean=mean,
+                                      variance=var,
+                                      variance_epsilon=eps,
+                                      offset=beta,
+                                      scale=None)
+        """
+        # BNはtf.layers.batch_normalizationを使うと楽
+        h = tf.layers.batch_normalization(u,
+                                          training=train_fg,
+                                          momentum=0.99,
+                                          epsilon=0.001
+                                          )
         output = tf.nn.relu(h)
 
     # 隠れ層 - 出力層
@@ -55,10 +93,12 @@ def loss(y, t):
 
 
 def training(loss):
-    optimizer = tf.train.AdamOptimizer(learning_rate=0.1,
-                                       beta1=0.9,
+    optimizer = tf.train.AdamOptimizer(learning_rate=0.1,  # BNを用いているので学習率
+                                       beta1=0.9,          # を大きくしても収束する．
                                        beta2=0.999)
-    train_step = optimizer.minimize(loss)
+    update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)  # BNのために必要
+    with tf.control_dependencies(update_ops):
+        train_step = optimizer.minimize(loss)
     return train_step
 
 
@@ -122,8 +162,13 @@ if __name__ == '__main__':
 
     x = tf.placeholder(tf.float32, shape=[None, n_in])
     t = tf.placeholder(tf.float32, shape=[None, n_out])
+    # BNの推論か訓練かを切り替えるためのplacefolder
+    train_fg = tf.placeholder(dtype=tf.bool)
 
-    y = inference(x, n_in=n_in, n_hiddens=n_hiddens, n_out=n_out)
+    y = inference(x, n_in=n_in,
+                  n_hiddens=n_hiddens,
+                  n_out=n_out,
+                  train_fg=train_fg)
     loss = loss(y, t)
     train_step = training(loss)
 
@@ -156,17 +201,20 @@ if __name__ == '__main__':
 
             sess.run(train_step, feed_dict={
                 x: X_[start:end],
-                t: Y_[start:end]
+                t: Y_[start:end],
+                train_fg: True
             })
 
         # 検証データを用いた評価
         val_loss = loss.eval(session=sess, feed_dict={
             x: X_validation,
-            t: Y_validation
+            t: Y_validation,
+            train_fg: False
         })
         val_acc = accuracy.eval(session=sess, feed_dict={
             x: X_validation,
-            t: Y_validation
+            t: Y_validation,
+            train_fg: False
         })
 
         # 検証データに対する学習の進み具合を記録

@@ -46,14 +46,19 @@ def weight_variable(shape, name=None):
 
 model = Sequential()
 for i, input_dim in enumerate(([n_in] + n_hiddens)[:-1]):
+    # model.add(Dense(n_hiddens[i], input_dim=input_dim,
+    #                kernel_initializer=weight_variable))
+    # 上のコードは以下でもok 詳しくはhttps://keras.io/ja/initializers/
     model.add(Dense(n_hiddens[i], input_dim=input_dim,
-                    kernel_initializer=weight_variable))
+                    kernel_initializer='he_normal'))
     model.add(Activation(activation))
     model.add(Dropout(p_keep))
 
 model.add(Dense(n_out, kernel_initializer=weight_variable))
 model.add(Activation('softmax'))
 
+# optimizer 引数にSGD(momentum=..)とすることでモメンタムが行える．
+# 普段はmomentum=0となっている．
 model.compile(loss='categorical_crossentropy',
               optimizer=SGD(lr=0.01, momentum=0.9),
               metrics=['accuracy'])

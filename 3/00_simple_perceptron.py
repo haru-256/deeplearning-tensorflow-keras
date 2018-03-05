@@ -39,6 +39,7 @@ def t(i):
 
 while True:
     classified = True
+    # 全てのデータについて更新
     for i in range(N * 2):
         delta_w = (t(i) - y(x[i])) * x[i]
         delta_b = (t(i) - y(x[i]))

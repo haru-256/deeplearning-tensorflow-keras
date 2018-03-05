@@ -4,6 +4,14 @@ from sklearn import datasets
 from sklearn.model_selection import train_test_split
 from sklearn.utils import shuffle
 
+
+# 関数定義 PReLU
+# tf.maximum では要素ごとに最大値が選ばれる．
+def prelu(x, alpha):
+    return tf.maximum(tf.zeros(tf.shape(x)), x) \
+        + alpha * tf.minimum(tf.zeros(tf.shape(x)), x)
+
+
 np.random.seed(0)
 tf.set_random_seed(123)
 
@@ -32,17 +40,13 @@ n_hidden = 200
 n_out = len(Y[0])  # 10
 
 
-def prelu(x, alpha):
-    return tf.maximum(tf.zeros(tf.shape(x)), x) \
-        + alpha * tf.minimum(tf.zeros(tf.shape(x)), x)
-
-
 x = tf.placeholder(tf.float32, shape=[None, n_in])
 t = tf.placeholder(tf.float32, shape=[None, n_out])
 
 # 入力層 - 隠れ層
 W0 = tf.Variable(tf.truncated_normal([n_in, n_hidden], stddev=0.01))
 b0 = tf.Variable(tf.zeros([n_hidden]))
+# 最適化されるものに，alphaも導入．個数はb_0と同じ数だけある．
 alpha0 = tf.Variable(tf.zeros([n_hidden]))
 h0 = prelu(tf.matmul(x, W0) + b0, alpha0)
 
@@ -65,11 +69,27 @@ h3 = prelu(tf.matmul(h2, W3) + b3, alpha3)
 # 隠れ層 - 出力層
 W4 = tf.Variable(tf.truncated_normal([n_hidden, n_out], stddev=0.01))
 b4 = tf.Variable(tf.zeros([n_out]))
-y = tf.nn.softmax(tf.matmul(h3, W4) + b4)
+# y = tf.nn.softmax(tf.matmul(h3, W4) + b4)
+y = tf.matmul(h3, W4) + b4
 
-cross_entropy = tf.reduce_mean(-tf.reduce_sum(t * tf.log(y),
-                               reduction_indices=[1]))
-train_step = tf.train.GradientDescentOptimizer(0.01).minimize(cross_entropy)
+# 重みの２乗ノルムの半分
+weight = tf.nn.l2_loss(W0) + tf.nn.l2_loss(W1) + tf.nn.l2_loss(W2)\
+         + tf.nn.l2_loss(W3) + tf.nn.l2_loss(W4)
+
+# cross_entropy = tf.reduce_mean(-tf.reduce_sum(t * tf.log(y),
+# reduction_indices=[1]))
+
+# 上と同じコードを意味する．
+cross_entropy = tf.reduce_mean(
+    tf.nn.softmax_cross_entropy_with_logits(
+        logits=y, labels=t
+    )
+)
+
+lambda_ = 0.001
+loss = cross_entropy + lambda_ * weight
+
+train_step = tf.train.GradientDescentOptimizer(0.006).minimize(loss)
 
 correct_prediction = tf.equal(tf.argmax(y, 1), tf.argmax(t, 1))
 accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))

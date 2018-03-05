@@ -11,6 +11,7 @@ tf.set_random_seed(1234)
 
 def inference(x, keep_prob, n_in, n_hiddens, n_out):
     def weight_variable(shape):
+        # Heの初期値で初期化
         initial = np.sqrt(2.0 / shape[0]) * tf.truncated_normal(shape)
         return tf.Variable(initial)
 
@@ -49,6 +50,8 @@ def loss(y, t):
 
 
 def training(loss):
+    # tf.train.MomentumOptimizer(0.01, 0.9)の第一引数はlearning_rate
+    # 第二引数はmomentum項を表す．
     optimizer = tf.train.MomentumOptimizer(0.01, 0.9)
     train_step = optimizer.minimize(loss)
     return train_step

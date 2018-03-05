@@ -4,7 +4,6 @@ from keras.layers.core import Dense, Activation
 from keras.optimizers import SGD
 from sklearn import datasets
 from sklearn.model_selection import train_test_split
-from sklearn.utils import shuffle
 
 np.random.seed(0)
 
@@ -20,6 +19,7 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.8)
 モデル生成
 '''
 model = Sequential()
+# 中間層の素子は3つに指定
 model.add(Dense(3, input_dim=2))
 model.add(Activation('sigmoid'))
 model.add(Dense(1))
@@ -31,6 +31,8 @@ model.compile(loss='binary_crossentropy',
 '''
 モデル学習
 '''
+# Kerasでは向こうで勝手にシャッフルをしてくれるので
+# こちら側でシャッフルする必要はない
 model.fit(X_train, y_train, epochs=500, batch_size=20)
 
 '''

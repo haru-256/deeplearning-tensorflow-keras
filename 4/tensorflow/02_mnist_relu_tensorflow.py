@@ -89,6 +89,7 @@ for epoch in range(epochs):
         })
 
     # 訓練データに対する学習の進み具合を出力
+    # Tensorオブジェクトには，evalメソッドがあるが，OPにはない．
     loss = cross_entropy.eval(session=sess, feed_dict={
         x: X_,
         t: Y_

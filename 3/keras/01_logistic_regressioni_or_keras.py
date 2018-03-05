@@ -14,16 +14,18 @@ model = Sequential([
     Activation('sigmoid')
 ])
 
+# 最適化手法と損失関数を定義
 model.compile(loss='binary_crossentropy', optimizer=SGD(lr=0.1))
 
-'''
-モデル学習
-'''
 # ORゲート
 X = np.array([[0, 0], [0, 1], [1, 0], [1, 1]])
 Y = np.array([[0], [1], [1], [1]])
 
-# model.fit(X, Y, nb_epoch=200, batch_size=1)  # Keras 1
+"""
+モデル学習
+"""
+
+#  model.fit(X, Y, nb_epoch=200, batch_size=1)  # Keras 1
 model.fit(X, Y, epochs=200, batch_size=1)      # Keras 2
 
 '''
