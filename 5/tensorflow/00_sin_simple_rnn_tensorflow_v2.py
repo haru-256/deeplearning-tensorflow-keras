@@ -38,7 +38,7 @@ def inference(x, n_batch, maxlen=None, n_hidden=None, n_out=None):
     c = bias_variable([n_out])
     ys = [tf.matmul(output, V) + c for output in outputs]  # 線形活性
 
-    return ys  # Loss Function is composed of all output. ys' shape is 
+    return ys  # Loss Function is composed of all output. ys' shape is
 
 
 def loss(ys, ts):
