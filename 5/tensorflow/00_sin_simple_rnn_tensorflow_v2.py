@@ -38,13 +38,17 @@ def inference(x, n_batch, maxlen=None, n_hidden=None, n_out=None):
     c = bias_variable([n_out])
     ys = [tf.matmul(output, V) + c for output in outputs]  # 線形活性
 
-    return ys  # Loss Function is composed of all output. ys' shape is
+    return ys  # Loss Function is composed of all output. ys' shape is T
 
 
-def loss(ys, ts):
-    mse = tf.reduce_mean([tf.square(y - t) for y, t in zip(ys, ts)])
-    # mse = tf.reduce_mean(tf.square(y - t))
-    # mse = tf.losses.mean_squared_error(t, y)
+def loss(ys, t, batch_size=10):
+    """
+    batchサイズを指定しないとtf.unstackが使えない．
+    全ての時刻からなる誤差関数を定義するにはどうすれば良いのか?
+    """
+    ts = tf.unstack(t, axis=0, num=batch_size)  # ts' elements shape is (num_T=maxlen, num_dim=1)
+    print(ts.shape)
+    mse = tf.reduce_mean([tf.square(y - t) for y, t in zip(ys, ts)])  # y's is scalar. t is Tensor(shape=())
     return mse
 
 
@@ -119,14 +123,12 @@ if __name__ == '__main__':
     n_hidden = 20
     n_out = 1  # 1(scalar)
 
-    x = tf.placeholder(tf.float32, shape=[None, maxlen, n_in])
-    t = tf.placeholder(tf.float32, shape=[None, maxlen, n_out])
+    x = tf.placeholder(tf.float32, shape=[None, maxlen, n_in])  # 入力データ
+    t = tf.placeholder(tf.float32, shape=[None, maxlen, n_out])  # 目標データ
     n_batch = tf.placeholder(tf.int32, shape=[])  # In the case of scalar, shape=[]
 
-    y = inference(x, n_batch, maxlen=maxlen, n_hidden=n_hidden, n_out=n_out)
-    ts = tf.unstack(t, axis=0)  # ts' elements shape is (num_T, num_dim)
-    print(ts)
-    loss = loss(y, ts)
+    ys = inference(x, n_batch, maxlen=maxlen, n_hidden=n_hidden, n_out=n_out)
+    loss = loss(ys, t)
     train_step = training(loss)
 
     early_stopping = EarlyStopping(patience=15, verbose=1)
