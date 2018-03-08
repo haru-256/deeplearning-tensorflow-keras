@@ -17,7 +17,11 @@ def inference(x, n_batch, maxlen=None, n_hidden=None, n_out=None):
         initial = tf.zeros(shape, dtype=tf.float32)
         return tf.Variable(initial)
 
-    cell = tf.contrib.rnn.BasicLSTMCell(n_hidden, forget_bias=1.0)
+    """
+    In order to corresponding LSTM, change this only.
+    NOTE: BasicLStmCell dose not implement 'peephole'
+    """
+    cell = tf.nn.rnn_cell.BasicLSTMCell(n_hidden, forget_bias=1.0)
     initial_state = cell.zero_state(n_batch, tf.float32)
 
     state = initial_state
@@ -39,7 +43,7 @@ def inference(x, n_batch, maxlen=None, n_hidden=None, n_out=None):
 
 
 def loss(y, t):
-    mse = tf.reduce_mean(tf.square(y - t))
+    mse = tf.losses.mean_squared_error(t, y)
     return mse
 
 

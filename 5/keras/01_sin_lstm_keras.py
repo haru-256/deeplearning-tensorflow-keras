@@ -64,9 +64,10 @@ early_stopping = EarlyStopping(monitor='val_loss', patience=10, verbose=1)
 model = Sequential()
 model.add(LSTM(n_hidden,
                kernel_initializer=weight_variable,
-               input_shape=(maxlen, n_in)))
+               input_shape=(maxlen, n_in)))  # input_shape = (N, T, D)
 model.add(Dense(n_out, kernel_initializer=weight_variable))
 model.add(Activation('linear'))
+print(model.summary())
 
 optimizer = Adam(lr=0.001, beta_1=0.9, beta_2=0.999)
 model.compile(loss='mean_squared_error',

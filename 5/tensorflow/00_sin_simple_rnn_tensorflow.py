@@ -40,6 +40,7 @@ def inference(x, n_batch, maxlen=None, n_hidden=None, n_out=None):
     V = weight_variable([n_hidden, n_out])
     c = bias_variable([n_out])
     y = tf.matmul(output, V) + c  # 線形活性
+    print(y.shape)
 
     return y  # Loss Function is composed only of last output
 
