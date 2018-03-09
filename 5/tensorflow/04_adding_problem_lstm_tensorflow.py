@@ -17,11 +17,13 @@ def inference(x, n_batch, maxlen=None, n_hidden=None, n_out=None):
         initial = tf.zeros(shape, dtype=tf.float32)
         return tf.Variable(initial)
 
-    cell = tf.contrib.rnn.BasicLSTMCell(n_hidden, forget_bias=1.0)
-    # cell = tf.contrib.rnn.LSTMCell(n_hidden, forget_bias=1.0)
+    cell = tf.nn.rnn_cell.BasicLSTMCell(n_hidden, forget_bias=1.0)
+
+    # cell = tf.nn.rnn_cell.LSTMCell(n_hidden, forget_bias=1.0)
     initial_state = cell.zero_state(n_batch, tf.float32)
 
     state = initial_state
+    """
     outputs = []  # 過去の隠れ層の出力を保存
     with tf.variable_scope('LSTM'):
         for t in range(maxlen):
@@ -29,8 +31,10 @@ def inference(x, n_batch, maxlen=None, n_hidden=None, n_out=None):
                 tf.get_variable_scope().reuse_variables()
             (cell_output, state) = cell(x[:, t, :], state)
             outputs.append(cell_output)
-
-    output = outputs[-1]
+    """
+    outputs, state = tf.nn.dynamic_rnn(cell, x, initial_state=state)
+    output = tf.gather(outputs, axis=1, indices=maxlen-1)
+    # 上のコードはoutputs[:, maxlen-1, :]と同じ意味
 
     V = weight_variable([n_hidden, n_out])
     c = bias_variable([n_out])
@@ -40,7 +44,7 @@ def inference(x, n_batch, maxlen=None, n_hidden=None, n_out=None):
 
 
 def loss(y, t):
-    mse = tf.reduce_mean(tf.square(y - t))
+    mse = tf.losses.mean_squared_error(labels=t, predictions=y)
     return mse
 
 
@@ -91,12 +95,12 @@ if __name__ == '__main__':
     モデル設定
     '''
     n_in = len(X[0][0])  # 2
-    n_hidden = 100
+    n_hidden = 100  # number of hidden units
     n_out = len(Y[0])  # 1
 
     x = tf.placeholder(tf.float32, shape=[None, maxlen, n_in])
     t = tf.placeholder(tf.float32, shape=[None, n_out])
-    n_batch = tf.placeholder(tf.int32)
+    n_batch = tf.placeholder(tf.int32, shape=[])
 
     y = inference(x, n_batch, maxlen=maxlen, n_hidden=n_hidden, n_out=n_out)
     loss = loss(y, t)

@@ -17,7 +17,7 @@ def inference(x, n_batch, maxlen=None, n_hidden=None, n_out=None):
         initial = tf.zeros(shape, dtype=tf.float32)
         return tf.Variable(initial)
 
-    cell = tf.contrib.rnn.BasicRNNCell(n_hidden)
+    cell = tf.nn.rnn_cell.BasicRNNCell(n_hidden)
     initial_state = cell.zero_state(n_batch, tf.float32)
 
     state = initial_state
@@ -39,13 +39,14 @@ def inference(x, n_batch, maxlen=None, n_hidden=None, n_out=None):
 
 
 def loss(y, t):
-    mse = tf.reduce_mean(tf.square(y - t))
+    mse = tf.losses.mean_squared_error(labels=t, predictions=y)
     return mse
 
 
 def training(loss):
     optimizer = \
-        tf.train.AdamOptimizer(learning_rate=0.001, beta1=0.9, beta2=0.999)
+        tf.train.AdamOptimizer(learning_rate=0.001,
+                               beta1=0.9, beta2=0.999)
 
     train_step = optimizer.minimize(loss)
     return train_step
@@ -55,10 +56,19 @@ if __name__ == '__main__':
     def mask(T=200):
         mask = np.zeros(T)
         indices = np.random.permutation(np.arange(T))[:2]
-        mask[indices] = 1
+        mask[indices] = 1  # randomly initialize two indices to 1
         return mask
 
     def toy_problem(N=10, T=200):
+        """
+        Returns
+        ------------
+        data: array(shape=(N,T,2))
+            input data
+
+        target: array(shape=(N, 1))
+            output data
+        """
         signals = np.random.uniform(low=0.0, high=1.0, size=(N, T))
         masks = np.zeros((N, T))
         for i in range(N):
@@ -84,7 +94,8 @@ if __name__ == '__main__':
     N_validation = N - N_train
 
     X_train, X_validation, Y_train, Y_validation = \
-        train_test_split(X, Y, test_size=N_validation)
+        train_test_split(X, Y,
+                         test_size=N_validation, train_size=N_train)
 
     '''
     モデル設定
@@ -95,9 +106,10 @@ if __name__ == '__main__':
 
     x = tf.placeholder(tf.float32, shape=[None, maxlen, n_in])
     t = tf.placeholder(tf.float32, shape=[None, n_out])
-    n_batch = tf.placeholder(tf.int32)
+    n_batch = tf.placeholder(tf.int32, shape=[])
 
-    y = inference(x, n_batch, maxlen=maxlen, n_hidden=n_hidden, n_out=n_out)
+    y = inference(x, n_batch, maxlen=maxlen,
+                  n_hidden=n_hidden, n_out=n_out)
     loss = loss(y, t)
     train_step = training(loss)
 
@@ -146,7 +158,12 @@ if __name__ == '__main__':
     '''
     loss = history['val_loss']
 
-    plt.rc('font', family='serif')
+    # Use Tex
+    import matplotlib
+    matplotlib.rcParams['text.latex.preamble'] = \
+        [r"\usepackage{amsmath}", r"\usepackage{bm}"]
+    matplotlib.rc('text', usetex=True)
+
     fig = plt.figure()
     plt.plot(range(len(loss)), loss, label='loss', color='black')
     plt.xlabel('epochs')
