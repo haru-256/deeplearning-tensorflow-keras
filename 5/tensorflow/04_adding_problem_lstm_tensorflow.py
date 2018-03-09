@@ -18,7 +18,6 @@ def inference(x, n_batch, maxlen=None, n_hidden=None, n_out=None):
         return tf.Variable(initial)
 
     cell = tf.nn.rnn_cell.BasicLSTMCell(n_hidden, forget_bias=1.0)
-
     # cell = tf.nn.rnn_cell.LSTMCell(n_hidden, forget_bias=1.0)
     initial_state = cell.zero_state(n_batch, tf.float32)
 

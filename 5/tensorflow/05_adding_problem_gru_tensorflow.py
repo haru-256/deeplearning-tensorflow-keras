@@ -21,7 +21,8 @@ def inference(x, n_batch, maxlen=None, n_hidden=None, n_out=None):
     initial_state = cell.zero_state(n_batch, tf.float32)
 
     state = initial_state
-    outputs = []  # 過去の隠れ層の出力を保存
+    # outputs = []  # 過去の隠れ層の出力を保存
+    """
     with tf.variable_scope('GRU'):
         for t in range(maxlen):
             if t > 0:
@@ -30,7 +31,9 @@ def inference(x, n_batch, maxlen=None, n_hidden=None, n_out=None):
             outputs.append(cell_output)
 
     output = outputs[-1]
-
+    """
+    outputs, state = tf.nn.dynamic_rnn(cell, x, initial_state=initial_state)
+    output = tf.gather(outputs, axis=1, indices=maxlen-1)
     V = weight_variable([n_hidden, n_out])
     c = bias_variable([n_out])
     y = tf.matmul(output, V) + c  # 線形活性
